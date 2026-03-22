@@ -13,8 +13,8 @@ from urllib3.util.retry import Retry
 # Configuration
 # ==========================
 
-STREAM_NAME = os.getenv("KINESIS_STREAM", "flight-data-stream")
-REGION = os.getenv("AWS_REGION", "ap-south-1")
+STREAM_NAME = os.getenv("KINESIS_STREAM", "flight-data-stream")  
+REGION = os.getenv("AWS_REGION", "ap-south-1") 
 
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "30"))
 
@@ -58,16 +58,17 @@ kinesis_client = boto3.client(
 
 session = requests.Session()
 
+# Define retry strategy for transient errors ...what this does is it will retry the request up to 3 times with an exponential backoff if it encounters certain HTTP status codes that indicate temporary issues (like rate limiting or server errors). This helps make the producer more resilient to network hiccups or API rate limits.
 retry_strategy = Retry(
     total=3,
     backoff_factor=1,
     status_forcelist=[429, 500, 502, 503, 504]
 )
 
-adapter = HTTPAdapter(max_retries=retry_strategy)
+adapter = HTTPAdapter(max_retries=retry_strategy)   # Mount the adapter to both HTTP and HTTPS
 
-session.mount("https://", adapter)
-session.mount("http://", adapter)
+session.mount("https://", adapter)    # Mount for HTTPS, which is the current API endpoint
+session.mount("http://", adapter)  # In case the API endpoint changes to HTTP in the future
 
 # ==========================
 # Fetch flight data
@@ -87,7 +88,7 @@ def fetch_flights():
             timeout=10
         )
 
-        response.raise_for_status()
+        response.raise_for_status()  # Raise error for bad status codes
 
         data = response.json()
 
@@ -113,12 +114,12 @@ def fetch_flights():
                 "altitude": state[7],
                 "velocity": state[9],
 
-                "vertical_rate": state[11],
+                "vertical_rate": state[11], 
                 "on_ground": state[8],
 
                 "last_contact": state[4],
 
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat() 
             }
 
             flights.append(flight)
